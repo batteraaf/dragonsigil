@@ -30,6 +30,21 @@ namespace DragonSigil.Combat
             return transform.position + new Vector3(coordinate.x * tileSize, 0f, coordinate.y * tileSize);
         }
 
+        /// <summary>
+        /// Inverse of GetWorldPosition: rounds a world position to its
+        /// nearest grid coordinate (relative to this TileGrid's transform),
+        /// so a drop point that's slightly off a tile's center still snaps
+        /// to the intended tile. Does not validate bounds — pass the result
+        /// to GetTile, which returns null for an out-of-range coordinate.
+        /// </summary>
+        public Vector2Int WorldToNearestCoordinate(Vector3 worldPosition)
+        {
+            var local = worldPosition - transform.position;
+            int x = Mathf.RoundToInt(local.x / tileSize);
+            int y = Mathf.RoundToInt(local.z / tileSize);
+            return new Vector2Int(x, y);
+        }
+
         public void Initialize(int newWidth, int newHeight, System.Func<Vector2Int, TileType> typeProvider)
         {
             width = newWidth;

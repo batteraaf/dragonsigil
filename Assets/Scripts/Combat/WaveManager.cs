@@ -133,6 +133,14 @@ namespace DragonSigil.Combat
             {
                 EvaluateFailure();
             }
+
+            // An enemy can reach the portal without fully breaching it
+            // (integrity is a health pool, not a single-hit loss condition)
+            // — that still needs to count toward the win check, or a stage
+            // where every remaining enemy reaches the portal survivably
+            // never resolves as cleared. Safe to call unconditionally:
+            // EvaluateClearCondition() already no-ops once StageFailed.
+            EvaluateClearCondition();
         }
 
         private void EvaluateFailure()
