@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5635fd35084ce9e419cdb0a9ceaebd9f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 227215
+  packageName: Object Pool Manager
+  packageVersion: 1.3.1
+  assetPath: Assets/MidniteOilSoftware/Prefabs/ObjectPoolManager.prefab
+  uploadId: 610271

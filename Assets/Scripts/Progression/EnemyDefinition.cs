@@ -22,6 +22,9 @@ namespace DragonSigil.Progression
         [SerializeField] private int baseAttack;
         [SerializeField] private float moveSpeed;
 
+        [Tooltip("Seconds between attacks while blocked by a champion.")]
+        [SerializeField] private float attackIntervalSeconds = 1f;
+
         [Tooltip("Can this enemy attack Ground champions, and Platform champions on Connecting Tiles?")]
         [SerializeField] private bool isMeleeCapable = true;
 
@@ -33,6 +36,7 @@ namespace DragonSigil.Progression
         public int BaseHP => baseHP;
         public int BaseAttack => baseAttack;
         public float MoveSpeed => moveSpeed;
+        public float AttackIntervalSeconds => attackIntervalSeconds;
         public bool IsMeleeCapable => isMeleeCapable;
         public bool IsRangedCapable => isRangedCapable;
     }

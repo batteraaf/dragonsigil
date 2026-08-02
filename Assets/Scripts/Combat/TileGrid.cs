@@ -11,11 +11,24 @@ namespace DragonSigil.Combat
     {
         [SerializeField] private int width;
         [SerializeField] private int height;
+        [SerializeField] private float tileSize = 1f;
 
         private Tile[,] _tiles;
 
         public int Width => width;
         public int Height => height;
+        public float TileSize => tileSize;
+
+        /// <summary>
+        /// Converts a grid coordinate to its world-space position, relative
+        /// to this TileGrid's transform so a stage can be placed anywhere
+        /// in the scene. Ground-plane (X/Z); elevation for Platform tiles
+        /// is not modeled here yet.
+        /// </summary>
+        public Vector3 GetWorldPosition(Vector2Int coordinate)
+        {
+            return transform.position + new Vector3(coordinate.x * tileSize, 0f, coordinate.y * tileSize);
+        }
 
         public void Initialize(int newWidth, int newHeight, System.Func<Vector2Int, TileType> typeProvider)
         {
@@ -29,6 +42,20 @@ namespace DragonSigil.Combat
                 {
                     var coord = new Vector2Int(x, y);
                     _tiles[x, y] = new Tile(coord, typeProvider(coord));
+                }
+            }
+        }
+
+        /// <summary>All tiles in the grid, in no particular order. Used by
+        /// WaveManager to find deployed champions each combat tick without
+        /// keeping a second, separately-maintained list in sync.</summary>
+        public IEnumerable<Tile> AllTiles()
+        {
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    yield return _tiles[x, y];
                 }
             }
         }

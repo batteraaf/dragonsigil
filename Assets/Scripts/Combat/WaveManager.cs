@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DragonSigil.Progression;
+using MidniteOilSoftware.ObjectPoolManager;
 
 namespace DragonSigil.Combat
 {
@@ -13,6 +14,8 @@ namespace DragonSigil.Combat
     {
         [SerializeField] private PathManager pathManager;
         [SerializeField] private Enemy enemyPrefab;
+        [SerializeField] private TileGrid tileGrid;
+        [SerializeField] private float movementTickInterval = 0.5f;
 
         private StageConfig _stageConfig;
         private readonly List<SigilPortal> _activePortals = new List<SigilPortal>();
@@ -31,6 +34,55 @@ namespace DragonSigil.Combat
             StageCleared = false;
 
             StartCoroutine(RunWaveTimeline());
+            StartCoroutine(CombatTick());
+        }
+
+        /// <summary>
+        /// Runs every combat tick: advances (or attacks with) every live
+        /// enemy, keeping moved enemies' transforms in sync with the tile
+        /// grid — the tile path itself (Enemy.AdvanceOneTile) has no notion
+        /// of world space — then lets every deployed champion attack
+        /// (GDD 4.1/4.2/4.4). One shared tick drives both sides rather than
+        /// two independently-drifting coroutines.
+        /// </summary>
+        private IEnumerator CombatTick()
+        {
+            while (!StageFailed && !StageCleared)
+            {
+                yield return new WaitForSeconds(movementTickInterval);
+
+                for (int i = _liveEnemies.Count - 1; i >= 0; i--)
+                {
+                    var enemy = _liveEnemies[i];
+                    bool moved = enemy.AdvanceOrAttack(movementTickInterval);
+                    if (moved)
+                    {
+                        enemy.transform.position = tileGrid.GetWorldPosition(enemy.CurrentTile().Coordinate);
+                    }
+
+                    if (enemy.HasReachedPortal)
+                    {
+                        OnEnemyReachedPortal(enemy);
+                    }
+                }
+
+                if (pathManager.Lanes.Count > 0)
+                {
+                    var forwardDirection = pathManager.GetDefendingForwardDirection(pathManager.Lanes[0]);
+                    // Snapshot: a champion's attack can kill an enemy
+                    // mid-loop, which removes it from _liveEnemies via
+                    // HandleEnemyDeath — iterating that list live here would
+                    // corrupt the foreach.
+                    var enemiesSnapshot = _liveEnemies.ToArray();
+                    foreach (var tile in tileGrid.AllTiles())
+                    {
+                        if (tile.Occupant != null)
+                        {
+                            tile.Occupant.TryAttack(movementTickInterval, tileGrid, forwardDirection, enemiesSnapshot);
+                        }
+                    }
+                }
+            }
         }
 
         private IEnumerator RunWaveTimeline()
@@ -51,8 +103,11 @@ namespace DragonSigil.Combat
         {
             foreach (var lane in pathManager.Lanes)
             {
-                var enemyInstance = Instantiate(enemyPrefab);
+                var enemyObject = ObjectPoolManager.SpawnGameObject(enemyPrefab.gameObject);
+                var enemyInstance = enemyObject.GetComponent<Enemy>();
                 enemyInstance.Initialize(lane.Path, lane.Destination);
+                enemyInstance.transform.position = tileGrid.GetWorldPosition(enemyInstance.CurrentTile().Coordinate);
+                enemyInstance.OnDeath += HandleEnemyDeath;
                 _liveEnemies.Add(enemyInstance);
             }
         }
@@ -64,6 +119,7 @@ namespace DragonSigil.Combat
         {
             enemy.TargetPortal.TakeBreach(enemy.Definition.BaseAttack);
             _liveEnemies.Remove(enemy);
+            ObjectPoolManager.DespawnGameObject(enemy.gameObject);
 
             if (enemy.TargetPortal.IsBreached)
             {
@@ -89,6 +145,13 @@ namespace DragonSigil.Combat
             {
                 StageCleared = true;
             }
+        }
+
+        private void HandleEnemyDeath(Enemy enemy)
+        {
+            enemy.OnDeath -= HandleEnemyDeath;
+            _liveEnemies.Remove(enemy);
+            EvaluateClearCondition();
         }
     }
 }

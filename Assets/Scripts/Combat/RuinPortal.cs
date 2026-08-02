@@ -10,9 +10,20 @@ namespace DragonSigil.Combat
     public class RuinPortal : MonoBehaviour
     {
         [SerializeField] private string portalId;
-        [SerializeField] private Tile spawnTile;
+        [SerializeField] private Vector2Int spawnCoordinate;
 
         public string PortalId => portalId;
-        public Tile SpawnTile => spawnTile;
+        public Vector2Int SpawnCoordinate => spawnCoordinate;
+        public Tile SpawnTile { get; private set; }
+
+        /// <summary>Resolves this portal's grid coordinate to an actual Tile
+        /// once the stage's TileGrid has been initialized. Tile itself can't
+        /// be assigned directly in the Inspector (no serializable fields, no
+        /// parameterless constructor), so the coordinate is the source of
+        /// truth and this must be called before use.</summary>
+        public void ResolveTile(TileGrid grid)
+        {
+            SpawnTile = grid.GetTile(spawnCoordinate);
+        }
     }
 }

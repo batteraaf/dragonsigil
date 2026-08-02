@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using DragonSigil.Combat;
 using DragonSigil.Progression;
@@ -27,6 +28,8 @@ namespace DragonSigil.Characters
         public int CurrentHP { get; private set; }
 
         public Tile CurrentTile { get; private set; }
+
+        private float _attackCooldown;
 
         /// <summary>Active skill's tile-based range pattern (GDD 4.4).</summary>
         public SkillRangePattern ActiveSkillRange => definition.ActiveSkillRange;
@@ -65,6 +68,35 @@ namespace DragonSigil.Characters
         {
             Withdraw();
             // TODO: death VFX, wave-fail checks, etc.
+        }
+
+        /// <summary>
+        /// Called once per WaveManager combat tick: auto-attacks enemies
+        /// within this champion's ActiveSkillRange pattern (GDD 4.4), on a
+        /// per-champion attack-interval cooldown.
+        /// </summary>
+        public void TryAttack(float tickInterval, TileGrid grid, Vector2Int forwardDirection, IReadOnlyList<Enemy> liveEnemies)
+        {
+            if (CurrentTile == null || ActiveSkillRange == null)
+            {
+                return;
+            }
+
+            _attackCooldown += tickInterval;
+            if (_attackCooldown < Definition.AttackIntervalSeconds)
+            {
+                return;
+            }
+            _attackCooldown = 0f;
+
+            var affectedTiles = ActiveSkillRange.ResolveAffectedTiles(grid, CurrentTile, forwardDirection);
+            foreach (var enemy in liveEnemies)
+            {
+                if (affectedTiles.Contains(enemy.CurrentTile()))
+                {
+                    enemy.TakeDamage(Definition.BaseAttack);
+                }
+            }
         }
 
         /// <summary>Sigil Ultimate unlocks only at AwakeningStage.DragonsEcho

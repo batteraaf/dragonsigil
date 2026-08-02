@@ -1,0 +1,15 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="DTT.EditorUtilities.Editor.csproj" />
+  <Project Path="DTT.AreaOfEffectRegions.Runtime.csproj" />
+  <Project Path="DTT.RuntimeUtilities.Runtime.csproj" />
+  <Project Path="DTT.PublishingTools.Editor.csproj" />
+  <Project Path="DTT.AreaOfEffectRegions.Editor.csproj" />
+  <Project Path="DTT.AreaOfEffectRegions.Demo.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="DTT.RuntimeUtilities.Demo.csproj" />
+  <Project Path="DTT.EditorUtilities.Demo.csproj" />
+  <Project Path="com.midniteoilsoftware.objectpoolmanager.csproj" />
+  <Project Path="DTT.AreaOfEffectRegions.Tests.Runtime.csproj" />
+  <Project Path="DTT.PublishingTools.Runtime.csproj" />
+</Solution>

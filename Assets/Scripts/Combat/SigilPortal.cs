@@ -12,15 +12,27 @@ namespace DragonSigil.Combat
     {
         [SerializeField] private string portalId;
         [SerializeField] private int maxIntegrity = 100;
+        [SerializeField] private Vector2Int spawnCoordinate;
 
         public string PortalId => portalId;
         public int MaxIntegrity => maxIntegrity;
         public int CurrentIntegrity { get; private set; }
         public bool IsBreached => CurrentIntegrity <= 0;
+        public Vector2Int SpawnCoordinate => spawnCoordinate;
+        public Tile SpawnTile { get; private set; }
 
         private void Awake()
         {
             CurrentIntegrity = maxIntegrity;
+        }
+
+        /// <summary>Resolves this portal's grid coordinate to an actual Tile
+        /// once the stage's TileGrid has been initialized — see
+        /// RuinPortal.ResolveTile for why this can't just be a serialized
+        /// Tile reference.</summary>
+        public void ResolveTile(TileGrid grid)
+        {
+            SpawnTile = grid.GetTile(spawnCoordinate);
         }
 
         /// <summary>Called when an enemy reaches this portal without being

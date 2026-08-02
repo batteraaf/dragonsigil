@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using DragonSigil.Characters;
 using DragonSigil.Progression;
+using MidniteOilSoftware.ObjectPoolManager;
 
 namespace DragonSigil.Combat
 {
@@ -9,7 +11,7 @@ namespace DragonSigil.Combat
     /// Abstract base for enemies moving along a lane from a RuinPortal toward
     /// its assigned SigilPortal (GDD 4.1/4.2), one tile at a time.
     /// </summary>
-    public abstract class Enemy : MonoBehaviour
+    public abstract class Enemy : MonoBehaviour, IRetrievedPoolObject
     {
         [SerializeField] private EnemyDefinition definition;
 
@@ -19,10 +21,24 @@ namespace DragonSigil.Combat
 
         private IReadOnlyList<Tile> _lanePath;
         private int _pathIndex;
+        private float _blockedAttackCooldown;
+
+        /// <summary>Fired when this enemy dies, before it's despawned back
+        /// to the pool, so WaveManager can drop it from the live-enemy list
+        /// and re-check the stage clear condition.</summary>
+        public event Action<Enemy> OnDeath;
 
         protected virtual void Awake()
         {
             CurrentHP = definition.BaseHP;
+        }
+
+        /// <summary>Pooled instances skip Awake on reuse, so HP (and any
+        /// other per-life state) must be reset here instead.</summary>
+        public virtual void RetrievedFromPool(GameObject prefab)
+        {
+            CurrentHP = definition.BaseHP;
+            _blockedAttackCooldown = 0f;
         }
 
         public virtual void Initialize(IReadOnlyList<Tile> lanePath, SigilPortal targetPortal)
@@ -52,6 +68,42 @@ namespace DragonSigil.Combat
         }
 
         public bool HasReachedPortal => _lanePath != null && _pathIndex >= _lanePath.Count - 1;
+
+        /// <summary>The next tile along this enemy's lane, or null if there
+        /// isn't one (already at the portal).</summary>
+        private Tile NextTile()
+        {
+            if (_lanePath == null || _pathIndex >= _lanePath.Count - 1)
+            {
+                return null;
+            }
+            return _lanePath[_pathIndex + 1];
+        }
+
+        /// <summary>
+        /// Called once per WaveManager combat tick: attacks the blocking
+        /// champion if one occupies the next tile, otherwise advances one
+        /// tile (GDD 4.1/4.2). Returns true if it moved, so WaveManager
+        /// knows whether to resync this enemy's world-space transform.
+        /// </summary>
+        public bool AdvanceOrAttack(float tickInterval)
+        {
+            var blocker = NextTile()?.Occupant;
+            if (blocker != null)
+            {
+                _blockedAttackCooldown += tickInterval;
+                if (_blockedAttackCooldown >= definition.AttackIntervalSeconds)
+                {
+                    _blockedAttackCooldown = 0f;
+                    blocker.TakeDamage(definition.BaseAttack);
+                }
+                return false;
+            }
+
+            _blockedAttackCooldown = 0f;
+            AdvanceOneTile();
+            return true;
+        }
 
         /// <summary>
         /// Whether this enemy can currently target the given champion, per
@@ -84,7 +136,8 @@ namespace DragonSigil.Combat
 
         protected virtual void Die()
         {
-            Destroy(gameObject);
+            OnDeath?.Invoke(this);
+            ObjectPoolManager.DespawnGameObject(gameObject);
         }
     }
 }

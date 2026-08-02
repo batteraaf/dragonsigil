@@ -35,5 +35,25 @@ namespace DragonSigil.Combat
                 }
             }
         }
+
+        /// <summary>
+        /// The direction a champion defending this lane should face: the
+        /// reverse of the enemies' direction of travel at the portal end,
+        /// i.e. toward the Ruin Portal the enemies are marching from. Used to
+        /// orient SkillRangePattern resolution (GDD 4.4) for champions near
+        /// this lane.
+        /// </summary>
+        public Vector2Int GetDefendingForwardDirection(Lane lane)
+        {
+            if (lane?.Path == null || lane.Path.Count < 2)
+            {
+                return Vector2Int.zero;
+            }
+
+            var last = lane.Path[lane.Path.Count - 1].Coordinate;
+            var secondLast = lane.Path[lane.Path.Count - 2].Coordinate;
+            var travelDirection = last - secondLast;
+            return -travelDirection;
+        }
     }
 }

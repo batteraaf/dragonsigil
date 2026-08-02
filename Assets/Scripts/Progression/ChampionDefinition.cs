@@ -24,6 +24,7 @@ namespace DragonSigil.Progression
         [Header("Base Stats (Level 1)")]
         [SerializeField] private int baseHP;
         [SerializeField] private int baseAttack;
+        [SerializeField] private float attackIntervalSeconds = 1f;
 
         [Header("Skills")]
         [SerializeField] private SkillRangePattern activeSkillRange;
@@ -35,6 +36,7 @@ namespace DragonSigil.Progression
         public Position Position => position;
         public int BaseHP => baseHP;
         public int BaseAttack => baseAttack;
+        public float AttackIntervalSeconds => attackIntervalSeconds;
         public SkillRangePattern ActiveSkillRange => activeSkillRange;
 
         private void OnValidate()
