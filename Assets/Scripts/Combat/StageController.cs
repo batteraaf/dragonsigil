@@ -23,6 +23,7 @@ namespace DragonSigil.Combat
         [SerializeField] private int gridHeight = 1;
         [SerializeField] private RuinPortal[] ruinPortals;
         [SerializeField] private SigilPortal[] sigilPortals;
+        [SerializeField] private TileVisualizer tileVisualizer;
 
         [Tooltip("Champions placed directly in the scene for this stage, ahead of any real squad-deployment UI.")]
         [SerializeField] private Champion[] deployedChampions;
@@ -30,6 +31,7 @@ namespace DragonSigil.Combat
         private void Start()
         {
             tileGrid.Initialize(gridWidth, gridHeight, _ => TileType.Ground);
+            tileVisualizer.BuildVisuals(tileGrid);
 
             foreach (var ruinPortal in ruinPortals)
             {
