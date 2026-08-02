@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DragonSigil.Characters;
 using DragonSigil.Progression;
 
 namespace DragonSigil.Combat
@@ -23,6 +24,9 @@ namespace DragonSigil.Combat
         [SerializeField] private RuinPortal[] ruinPortals;
         [SerializeField] private SigilPortal[] sigilPortals;
 
+        [Tooltip("Champions placed directly in the scene for this stage, ahead of any real squad-deployment UI.")]
+        [SerializeField] private Champion[] deployedChampions;
+
         private void Start()
         {
             tileGrid.Initialize(gridWidth, gridHeight, _ => TileType.Ground);
@@ -35,6 +39,11 @@ namespace DragonSigil.Combat
             foreach (var sigilPortal in sigilPortals)
             {
                 sigilPortal.ResolveTile(tileGrid);
+            }
+
+            foreach (var champion in deployedChampions)
+            {
+                champion.ResolveAndDeploy(tileGrid);
             }
 
             BuildLanes();

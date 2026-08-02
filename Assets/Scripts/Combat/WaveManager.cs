@@ -20,6 +20,7 @@ namespace DragonSigil.Combat
         private StageConfig _stageConfig;
         private readonly List<SigilPortal> _activePortals = new List<SigilPortal>();
         private readonly List<Enemy> _liveEnemies = new List<Enemy>();
+        private bool _allWavesSpawned;
 
         public bool StageFailed { get; private set; }
         public bool StageCleared { get; private set; }
@@ -30,6 +31,7 @@ namespace DragonSigil.Combat
             _activePortals.Clear();
             _activePortals.AddRange(portals);
             _liveEnemies.Clear();
+            _allWavesSpawned = false;
             StageFailed = false;
             StageCleared = false;
 
@@ -57,7 +59,7 @@ namespace DragonSigil.Combat
                     bool moved = enemy.AdvanceOrAttack(movementTickInterval);
                     if (moved)
                     {
-                        enemy.transform.position = tileGrid.GetWorldPosition(enemy.CurrentTile().Coordinate);
+                        enemy.BeginVisualMove(tileGrid.GetWorldPosition(enemy.CurrentTile().Coordinate), movementTickInterval);
                     }
 
                     if (enemy.HasReachedPortal)
@@ -90,13 +92,19 @@ namespace DragonSigil.Combat
             foreach (var enemyDef in _stageConfig.WaveTimeline)
             {
                 SpawnAcrossLanes(enemyDef);
-                yield return new WaitForSeconds(1.5f); // placeholder pacing; real timing is data-driven per stage
+                // Placeholder pacing; real timing is data-driven per stage. Deliberately not an
+                // exact multiple of movementTickInterval, so wave spawns don't land on an
+                // already-pending combat tick (which made later waves visually "catch up" faster).
+                yield return new WaitForSeconds(1.4f);
             }
 
             if (_stageConfig.BossDefinition != null)
             {
                 SpawnAcrossLanes(_stageConfig.BossDefinition);
             }
+
+            _allWavesSpawned = true;
+            EvaluateClearCondition(); // in case the last wave died before this flag was set
         }
 
         private void SpawnAcrossLanes(EnemyDefinition enemyDef)
@@ -141,7 +149,7 @@ namespace DragonSigil.Combat
 
         public void EvaluateClearCondition()
         {
-            if (!StageFailed && _liveEnemies.Count == 0)
+            if (_allWavesSpawned && !StageFailed && _liveEnemies.Count == 0)
             {
                 StageCleared = true;
             }

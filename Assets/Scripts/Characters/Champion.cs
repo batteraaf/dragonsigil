@@ -15,6 +15,9 @@ namespace DragonSigil.Characters
     {
         [SerializeField] private ChampionDefinition definition;
 
+        [Tooltip("Grid coordinate this champion is authored to occupy at stage start. Resolved to an actual Tile once the stage's TileGrid initializes — see RuinPortal.ResolveTile for why this can't just be a serialized Tile reference.")]
+        [SerializeField] private Vector2Int spawnCoordinate;
+
         public ChampionDefinition Definition => definition;
         public Position Position { get; private set; }
         public DragonOrder Order => definition.Order;
@@ -47,6 +50,19 @@ namespace DragonSigil.Characters
         {
             CurrentTile = tile;
             tile.SetOccupant(this);
+        }
+
+        /// <summary>Deploys this champion onto its authored spawnCoordinate
+        /// once the stage's TileGrid has been initialized. Called by
+        /// StageController for scene-placed champions, ahead of any real
+        /// squad-deployment UI.</summary>
+        public void ResolveAndDeploy(TileGrid grid)
+        {
+            var tile = grid.GetTile(spawnCoordinate);
+            if (tile != null)
+            {
+                Deploy(tile);
+            }
         }
 
         public virtual void Withdraw()

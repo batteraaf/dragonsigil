@@ -23,6 +23,11 @@ namespace DragonSigil.Combat
         private int _pathIndex;
         private float _blockedAttackCooldown;
 
+        private Vector3 _visualMoveStart;
+        private Vector3 _visualMoveTarget;
+        private float _visualMoveElapsed;
+        private float _visualMoveDuration;
+
         /// <summary>Fired when this enemy dies, before it's despawned back
         /// to the pool, so WaveManager can drop it from the live-enemy list
         /// and re-check the stage clear condition.</summary>
@@ -39,6 +44,37 @@ namespace DragonSigil.Combat
         {
             CurrentHP = definition.BaseHP;
             _blockedAttackCooldown = 0f;
+            // Force "at rest" so a reused instance doesn't glide in from a
+            // previous life's stale start/target position.
+            _visualMoveElapsed = 0f;
+            _visualMoveDuration = 0f;
+        }
+
+        /// <summary>
+        /// Purely visual: glides from the current position to
+        /// <paramref name="targetPosition"/> over <paramref name="duration"/>
+        /// real seconds, driven by this component's own Update() rather than
+        /// the combat tick. Does not touch tile/path logic — WaveManager
+        /// still owns when this is called and with what duration.
+        /// </summary>
+        public void BeginVisualMove(Vector3 targetPosition, float duration)
+        {
+            _visualMoveStart = transform.position;
+            _visualMoveTarget = targetPosition;
+            _visualMoveElapsed = 0f;
+            _visualMoveDuration = duration;
+        }
+
+        private void Update()
+        {
+            if (_visualMoveElapsed >= _visualMoveDuration)
+            {
+                return;
+            }
+
+            _visualMoveElapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(_visualMoveElapsed / _visualMoveDuration);
+            transform.position = Vector3.Lerp(_visualMoveStart, _visualMoveTarget, t);
         }
 
         public virtual void Initialize(IReadOnlyList<Tile> lanePath, SigilPortal targetPortal)
